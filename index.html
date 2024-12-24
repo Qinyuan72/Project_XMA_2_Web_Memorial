@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fade Out the Actual Top Line + Pause Scroll</title>
+  <style>
+    /* 基础样式设置 */
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    #output {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      transition: top 1s ease, transform 1s ease;
+      font-size: 1.92rem;
+      line-height: 1.4;
+      text-align: center;
+      box-sizing: border-box;
+      max-height: 50vh;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    #output::-webkit-scrollbar {
+      width: 0; background: transparent;
+    }
+    #output:hover::-webkit-scrollbar {
+      width: 6px;
+    }
+    #output:hover::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 3px;
+    }
+    @media (min-width: 769px) {
+      #output { width: 60%; }
+    }
+    @media (max-width: 768px) {
+      #output { width: 90%; }
+    }
+    #output.moveDown {
+      top: 70%; transform: translate(-50%, -70%);
+    }
+    .dialog-line {
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.5rem;
+      white-space: pre-wrap;
+      transition: opacity 1s ease;
+    }
+    .fade-out {
+      opacity: 0;
+    }
+    .cursor {
+      display: inline-block;
+      width: 0;
+      overflow: visible;
+      margin-left: 3px;
+      vertical-align: bottom;
+      animation: blink-caret 0.2s step-end infinite alternate;
+    }
+    .cursor::after {
+      content: "|";
+      color: #fdd835;
+    }
+    @keyframes blink-caret {
+      0%   { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    strong {
+      color: #fdd835;
+    }
+  </style>
+</head>
+<body>
+  <div id="output">Loading data...</div>
+
+  <script>
+    // === 常量设置 ===
+    const TYPING_INTERVAL = 40;     // 每个字符之间的间隔
+    const EXTRA_CURSOR_TIME = 500;  // 光标额外闪烁时间
+    const LINE_DISPLAY_TIME = 1500; // 一行显示完后的停留时间
+    const MANUAL_SCROLL_TIMEOUT = 10000; // 手动滚动后多久恢复自动滚动
+
+    let globalData = null;
+    let outputDiv = null;
+    let lastGroupName = null;
+    let manualScrolling = false;
+    let lastUserInteraction = 0;
+
+    // === 页面加载后执行 ===
+    window.onload = () => {
+      console.log("Page loaded.");
+      fetchAndDisplayData();
+      // 检测用户手动滚动
+      ['wheel', 'touchmove', 'scroll'].forEach(evt => {
+        document.addEventListener(evt, () => {
+          manualScrolling = true;
+          lastUserInteraction = Date.now();
+          console.log("Manual scrolling detected.");
+        }, { passive: true });
+      });
+
+      // 自动恢复滚动
+      setInterval(() => {
+        if (manualScrolling && (Date.now() - lastUserInteraction) >= MANUAL_SCROLL_TIMEOUT) {
+          manualScrolling = false;
+          console.log("Auto-scroll restored.");
+        }
+      }, 1000);
+    };
+
+    // === 拉取数据并初始化 ===
+    async function fetchAndDisplayData() {
+      try {
+        console.log("Fetching data...");
+        const response = await fetch('Data/Chat_JSON/dialog_data.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const rawData = await response.json();
+
+        const allGroups = new Set();
+        if (rawData.dialogs && Array.isArray(rawData.dialogs)) {
+          rawData.dialogs.forEach(d => {
+            if (d.group) { allGroups.add(d.group); }
+          });
+        }
+        globalData = {
+          dialogs: rawData.dialogs || [],
+          groups: Array.from(allGroups)
+        };
+        console.log("Data loaded successfully.", globalData);
+
+        outputDiv = document.getElementById('output');
+        if (!globalData.groups || globalData.groups.length === 0) {
+          outputDiv.innerText = 'No groups available.';
+          return;
+        }
+        startNewGroup();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('output').innerText = 'Error loading data.';
+      }
+    }
+
+    // === 随机选择组 ===
+    function pickRandomGroup(data) {
+      const groups = data.groups;
+      if (!groups || groups.length === 0) return null;
+      if (groups.length === 1) return groups[0];
+      let randomGroup = null;
+      let attempts = 10;
+      while (attempts > 0) {
+        const candidate = groups[Math.floor(Math.random() * groups.length)];
+        if (candidate !== lastGroupName) {
+          randomGroup = candidate;
+          break;
+        }
+        attempts--;
+      }
+      if (!randomGroup) {
+        randomGroup = groups[Math.floor(Math.random() * groups.length)];
+      }
+      lastGroupName = randomGroup;
+      console.log("Picked group:", randomGroup);
+      return randomGroup;
+    }
+
+    // === 开始新组 ===
+    function startNewGroup() {
+      clearFadedLines(outputDiv);
+      outputDiv.classList.remove('moveDown');
+      outputDiv.innerHTML = '';
+      const groupName = pickRandomGroup(globalData);
+      if (!groupName) {
+        outputDiv.innerText = 'No valid group found.';
+        return;
+      }
+      showGroup(groupName);
+    }
+
+    // === 显示组的所有行 ===
+    function showGroup(groupName) {
+      const matchedDialogs = globalData.dialogs.filter(d => d.group === groupName);
+      if (matchedDialogs.length === 0) {
+        outputDiv.innerText = `No dialogs found for group: ${groupName}`;
+        return;
+      }
+      const lines = matchedDialogs.map(d => `#${d.group_sequence_no} (${d.tag}) ${d.content}`);
+      let currentLineIndex = 0;
+
+      function showNextLine() {
+        if (currentLineIndex >= lines.length) {
+          outputDiv.classList.add('moveDown');
+          setTimeout(() => {
+            startNewGroup();
+          }, 2000);
+          return;
+        }
+        const lineText = lines[currentLineIndex];
+        currentLineIndex++;
+        typeLine(lineText, outputDiv, () => {
+          setTimeout(() => {
+            setTimeout(showNextLine, LINE_DISPLAY_TIME);
+          }, 0);
+        });
+      }
+      showNextLine();
+    }
+
+    // === 逐字打印一行 ===
+    function typeLine(lineText, containerEl, onComplete) {
+      let charIndex = 0;
+      const lineDiv = document.createElement('div');
+      lineDiv.className = 'dialog-line';
+      containerEl.appendChild(lineDiv);
+
+      function typeChar() {
+        if (charIndex <= lineText.length) {
+          const typed = lineText.slice(0, charIndex);
+          lineDiv.innerHTML = typed + '<span class="cursor"></span>';
+          charIndex++;
+          if (!manualScrolling) {
+            containerEl.scrollTop = containerEl.scrollHeight;
+          }
+          setTimeout(typeChar, TYPING_INTERVAL);
+        } else {
+          setTimeout(() => {
+            lineDiv.innerHTML = lineText;
+            applyBoldFormatting(lineDiv);
+            if (!manualScrolling) {
+              containerEl.scrollTop = containerEl.scrollHeight;
+            }
+            fadeOutActualTopLine(containerEl);
+            onComplete && onComplete();
+          }, EXTRA_CURSOR_TIME);
+        }
+      }
+      typeChar();
+    }
+
+    // === 动态加粗功能 ===
+    function applyBoldFormatting(lineDiv) {
+      lineDiv.innerHTML = lineDiv.innerHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // === 淡出顶部行 ===
+    function fadeOutActualTopLine(containerEl) {
+      const lines = containerEl.querySelectorAll('.dialog-line');
+      if (lines.length < 5) {
+        console.log("Not enough lines to fade out. Current line count:", lines.length);
+        return;
+      }
+      const topLine = lines[0];
+      if (!topLine.classList.contains('fade-out')) {
+        topLine.classList.add('fade-out');
+        console.log("Fading out line:", topLine.textContent);
+      }
+    }
+
+    // === 清除所有淡出行 ===
+    function clearFadedLines(containerEl) {
+      const fadedLines = containerEl.querySelectorAll('.fade-out');
+      fadedLines.forEach(line => {
+        console.log("Removing line:", line.textContent);
+        line.remove();
+      });
+    }
+  </script>
+</body> 
+</html>
