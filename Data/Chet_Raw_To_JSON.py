@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import html  # 用于转义特殊字符
 
 # 输入 .ini 文件的路径
 ini_file_path = "Data/Chat_Raw/第二个小棉袄.ini"  # 替换为你的路径
@@ -31,7 +32,7 @@ dialog_count = 0
 group_limit = 20
 global_sequence_no = 0
 group_sequences = {current_group: 0}
-current_dialog = None  # 初始化为空，避免未定义错误
+current_dialog = None  # 当前对话记录
 
 # 读取 .ini 文件
 with open(ini_file_path, "r", encoding="utf-8") as file:
@@ -42,7 +43,7 @@ for line in ini_content:
     line = line.strip()
     if line:
         if line.startswith("[") and line.endswith("]"):
-            # 新组逻辑，手动切换组
+            # 创建新分组
             if dialog_count >= group_limit:
                 group_index += 1
                 dialog_count = 0
@@ -50,10 +51,15 @@ for line in ini_content:
                 group_sequences[current_group] = 0
             dialog_data["groups"].append({"Group": current_group, "Index": group_index})
         elif line.lower() in ["user", "chatgpt"]:
+            # 处理当前对话记录
+            if current_dialog and current_dialog["content"]:
+                dialog_data["dialogs"].append(current_dialog)
+
+            # 初始化新对话
             global_sequence_no += 1
             group_sequences[current_group] += 1
             current_dialog = {
-                "tag": line,
+                "tag": line.lower(),
                 "group": current_group,
                 "content": "",
                 "emotion_weight": 0.5,
@@ -63,23 +69,32 @@ for line in ini_content:
                 "group_sequence_no": group_sequences[current_group]
             }
         else:
+            # 累加当前对话内容，并添加换行符
             if current_dialog:
-                current_dialog["content"] = line
+                escaped_line = html.escape(line)
+                if current_dialog["content"]:
+                    current_dialog["content"] += f"\n{escaped_line}"
+                else:
+                    current_dialog["content"] = escaped_line
+
                 # 分类逻辑
                 for category, pattern in categories.items():
-                    if re.search(pattern, line, re.IGNORECASE):
+                    if re.search(pattern, current_dialog["content"], re.IGNORECASE):
                         current_dialog["category"] = category
                         current_dialog["emotion_weight"] = 0.8 if category == "Offensive" else 0.5
                         break
-                dialog_data["dialogs"].append(current_dialog)
-                current_dialog = None
-                dialog_count += 1
-                # 检查组大小
-                if dialog_count >= group_limit:
-                    group_index += 1
-                    dialog_count = 0
-                    current_group = f"Group_{group_index}"
-                    group_sequences[current_group] = 0
+
+            dialog_count += 1
+            # 超过组大小限制时切换到新组
+            if dialog_count >= group_limit:
+                group_index += 1
+                dialog_count = 0
+                current_group = f"Group_{group_index}"
+                group_sequences[current_group] = 0
+
+# 处理最后一个对话
+if current_dialog and current_dialog["content"]:
+    dialog_data["dialogs"].append(current_dialog)
 
 # 输出到 JSON 文件
 json_file_path = "Data/Chat_JSON/dialog_data.json"
@@ -88,4 +103,4 @@ os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
 with open(json_file_path, "w", encoding="utf-8") as json_file:
     json.dump(dialog_data, json_file, ensure_ascii=False, indent=4)
 
-print(f"整合完成后的 JSON 数据已成功保存到 {json_file_path}")
+print(f"修正后的 JSON 数据已成功保存到 {json_file_path}")
