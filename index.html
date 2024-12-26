@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Project_XMA</title>
   <style>
-    /* 全屏黑底，白字，隐藏主滚动条 */
+    /* Base Styles */
     html, body {
       margin: 0; 
       padding: 0;
@@ -17,7 +17,7 @@
       overflow: hidden;
     }
 
-    /* PC 顶部淡出层（只PC显示） */
+    /* Top Blur Effect */
     #topBlur {
       position: absolute;
       top: 0; left: 0;
@@ -26,10 +26,10 @@
       pointer-events: none;
       background: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
       z-index: 9999;
-      display: none; /* PC端显示,移动端隐藏 */
+      display: none;
     }
 
-    /* 移动端的顶部和底部淡出层（只移动端显示） */
+    /* Mobile Blur Effects */
     #topMobileBlur, #bottomMobileBlur {
       display: none;
       position: absolute;
@@ -37,20 +37,20 @@
       pointer-events: none;
       z-index: 9999;
     }
-    /* 顶部 10% 淡出 */
+
     #topMobileBlur {
       top: 0;
       height: 10vh;
       background: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
     }
-    /* 底部 10% 淡出 */
+
     #bottomMobileBlur {
       bottom: 0;
       height: 10vh;
       background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0));
     }
 
-    /* 容器 #output，PC与移动端布局不同 */
+    /* Output Container Styles */
     #output {
       position: absolute;
       transition: top 1s ease, transform 1s ease;
@@ -59,29 +59,29 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* 隐藏滚动条 (WebKit) */
+
+    /* Custom Scrollbar Styles */
     #output::-webkit-scrollbar {
       width: 0; 
       background: transparent;
     }
+
     #output:hover::-webkit-scrollbar {
       width: 6px; 
     }
+
     #output:hover::-webkit-scrollbar-thumb {
       background: #666; 
       border-radius: 3px;
     }
-    #output:hover::-webkit-scrollbar-track {
-      background: transparent;
-    }
 
-    /* PC 布局 */
+    /* Desktop Media Query */
     @media (min-width: 769px) {
       #topBlur {
-        display: block; /* PC端显示顶部淡出 */
+        display: block;
       }
       #topMobileBlur, #bottomMobileBlur {
-        display: none; /* 移动端淡出层对PC隐藏 */
+        display: none;
       }
       #output {
         top: 50%; 
@@ -92,19 +92,18 @@
         line-height: 1.4;
         text-align: center;
         max-height: 50vh;
-        margin-top: 4rem; /* 让内容可滚到顶部遮罩下 */
+        margin-top: 4rem;
       }
     }
 
-    /* 移动端 布局 */
+    /* Mobile Media Query */
     @media (max-width: 768px) {
       #topBlur {
         display: none;
       }
       #topMobileBlur, #bottomMobileBlur {
-        display: block; /* 移动端显示上下10%淡出层 */
+        display: block;
       }
-
       #output {
         top: 10%;
         left: 50%;
@@ -118,13 +117,13 @@
       }
     }
 
-    /* 打印完组后容器移到下方70% */
+    /* Move Down Animation */
     #output.moveDown {
       top: 70%;
       transform: translate(-50%, -70%);
     }
 
-    /* 对话行: 无淡出动画，但我们会对其文本节点做Range检测 */
+    /* Dialog Line Styles */
     .dialog-line {
       margin-bottom: 1rem;
       border-bottom: 1px solid #333;
@@ -132,7 +131,7 @@
       white-space: pre-wrap;
     }
 
-    /* 闪烁光标 */
+    /* Cursor Styles */
     .cursor {
       display: inline-block;
       width: 0;
@@ -141,274 +140,574 @@
       vertical-align: bottom;
       animation: blink-caret 0.2s step-end infinite alternate;
     }
+
     .cursor::after {
       content: "|";
       color: #fdd835;
     }
+
     @keyframes blink-caret {
       0%   { opacity: 1; }
       100% { opacity: 0; }
     }
 
-    /* 加粗时使用的强调色 */
+    /* Bold Text Styles */
     strong {
       color: #fdd835;
+    }
+
+    /* Pause Button Styles */
+    #pauseButton {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background-color: rgba(255, 255, 255, 0.2); /* 20% opaque white */
+      border: 2px solid #ccc; /* Light grey stroke */
+      border-radius: 50%; /* 保持圆形按钮 */
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      z-index: 10000;
+      transition: background-color 0.3s, transform 0.3s, opacity 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      opacity: 0.35; /* Initial opacity for playing state */
+    }
+
+    /* Hover Effect for Pause Button */
+    #pauseButton:hover {
+      opacity: 0.95; /* Increase opacity on hover */
+      transform: scale(1.05); /* Slightly enlarge on hover */
+    }
+
+    /* SVG Icon Styles */
+    #pauseButton svg {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      fill: #ffffff; /* White color */
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    /* Play Icon Hidden by Default */
+    #playIcon {
+      opacity: 0.10; /* 10% opacity for play icon */
+    }
+
+    /* Active Play Icon */
+    #playIcon.active {
+      opacity: 0.95; /* 95% opacity when active */
+    }
+
+    /* Active Pause Icon */
+    #pauseIcon.active {
+      opacity: 0.95; /* 95% opacity when active */
+    }
+
+    /* Hidden Icon */
+    #playIcon.hidden, #pauseIcon.hidden {
+      opacity: 0;
+    }
+
+    /* Paused State Styles */
+    #pauseButton.paused {
+      opacity: 0.95; /* High opacity when paused */
+    }
+
+    /* Focus Styles for Accessibility */
+    #pauseButton:focus {
+      /* 移除外部环的透明度 */
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(253, 216, 53, 0); /* 设置透明度为0% */
     }
   </style>
 </head>
 <body>
-  <!-- PC顶部淡出 -->
-  <div id="topBlur"></div>
-  <!-- 移动端顶部/底部10%淡出层 -->
-  <div id="topMobileBlur"></div>
-  <div id="bottomMobileBlur"></div>
-
-  <!-- 主容器 -->
-  <div id="output">Loading data...</div>
+  <div id="topBlur" aria-hidden="true"></div>
+  <div id="topMobileBlur" aria-hidden="true"></div>
+  <div id="bottomMobileBlur" aria-hidden="true"></div>
+  <div id="output" role="log" aria-live="polite">Loading data...</div>
+  
+  <!-- Pause Button with SVG Icons -->
+  <button id="pauseButton" aria-label="Pause" title="Pause" aria-pressed="false">
+    <!-- Pause Icon (Visible by Default) -->
+    <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="6" y="4" width="4" height="16"></rect>
+      <rect x="14" y="4" width="4" height="16"></rect>
+    </svg>
+    <!-- Play Icon (Hidden by Default) -->
+    <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <polygon points="8,5 19,12 8,19"></polygon>
+    </svg>
+  </button>
 
   <script>
-    // ========== 打字机 & 滚动控制 参数 ==========
+    /**
+     * Typing effect interval in milliseconds.
+     * @constant {number}
+     */
     const TYPING_INTERVAL = 35;
+
+    /**
+     * Additional cursor display time after typing completion in milliseconds.
+     * @constant {number}
+     */
     const EXTRA_CURSOR_TIME = 500; 
+
+    /**
+     * Time to display each line before moving to the next in milliseconds.
+     * @constant {number}
+     */
     const LINE_DISPLAY_TIME = 1500;
+
+    /**
+     * Timeout to reset manual scrolling state in milliseconds.
+     * @constant {number}
+     */
     const MANUAL_SCROLL_TIMEOUT = 3000; 
-    // 用于行亮度: 距顶部 < fadeDistance => brightness 1->0
+
+    /**
+     * Distance for fade effect.
+     * @constant {number}
+     */
     const fadeDistance = 100;
 
+    /** 
+     * Global data containing dialogs and groups.
+     * @type {Object|null}
+     */
     let globalData = null;
+
+    /** 
+     * Reference to the output container element.
+     * @type {HTMLElement|null}
+     */
     let outputDiv = null;
+
+    /**
+     * Name of the last selected group to avoid repetition.
+     * @type {string|null}
+     */
     let lastGroupName = null;
 
+    /**
+     * Flag to indicate if the user is manually scrolling.
+     * @type {boolean}
+     */
     let manualScrolling = false;
+
+    /**
+     * Timestamp of the last user interaction.
+     * @type {number}
+     */
     let lastUserInteraction = 0;
 
+    /**
+     * Flag indicating if the system is paused.
+     * @type {boolean}
+     */
+    let isPaused = false;
+
+    /**
+     * Promise that resolves when the system resumes from pause.
+     * @type {Promise|null}
+     */
+    let pausePromise = null;
+
+    /**
+     * Function to resolve the pause promise.
+     * @type {Function|null}
+     */
+    let pauseResolve = null;
+
+    /**
+     * Initializes the application on window load.
+     */
     window.onload = () => {
       fetchAndDisplayData();
 
-      // 监听容器的滚动 => 暂停自动滚动 + 做“实际折行亮度”检测
       outputDiv = document.getElementById('output');
-      outputDiv.addEventListener('scroll', () => {
+      outputDiv.addEventListener('scroll', debounce(() => {
         manualScrolling = true;
         lastUserInteraction = Date.now();
-        onScrollBrightness();
-      }, { passive:true });
+      }, 100), { passive:true });
 
-      // 每秒检查 => 3秒无操作则恢复自动滚动
       setInterval(() => {
         if (manualScrolling && (Date.now() - lastUserInteraction) >= MANUAL_SCROLL_TIMEOUT) {
           manualScrolling = false;
         }
       }, 1000);
+
+      setInterval(replaceImageLinks, 500);
+
+      // Initialize pause button
+      const pauseButton = document.getElementById('pauseButton');
+      pauseButton.addEventListener('click', togglePause);
+
+      // Initialize keyboard listener for spacebar
+      document.addEventListener('keydown', handleKeyDown);
     };
 
-    /* 拉取 JSON 并初始化 */
+    /**
+     * Handles keydown events for keyboard controls.
+     * @param {KeyboardEvent} event - The keyboard event.
+     */
+    function handleKeyDown(event) {
+      // Check if the pressed key is the spacebar
+      if (event.code === 'Space') {
+        // Prevent the default spacebar behavior (e.g., scrolling)
+        event.preventDefault();
+
+        // Toggle pause/play
+        togglePause();
+      }
+    }
+
+    /**
+     * Toggles the pause state of the application and switches icons accordingly with fade animation.
+     */
+    function togglePause() {
+      isPaused = !isPaused;
+      const pauseButton = document.getElementById('pauseButton');
+      const pauseIcon = document.getElementById('pauseIcon');
+      const playIcon = document.getElementById('playIcon');
+
+      if (isPaused) {
+        // Activate Play Icon
+        pauseIcon.classList.add('hidden');
+        playIcon.classList.remove('hidden');
+        playIcon.classList.add('active');
+        pauseIcon.classList.remove('active');
+        
+        // Add 'paused' class to button to increase opacity
+        pauseButton.classList.add('paused');
+
+        // Update ARIA attributes
+        pauseButton.setAttribute('aria-label', 'Resume');
+        pauseButton.setAttribute('title', 'Resume');
+        pauseButton.setAttribute('aria-pressed', 'true');
+
+        console.log('Paused');
+
+        // Create a new Promise to pause the execution
+        pausePromise = new Promise(resolve => {
+          pauseResolve = resolve;
+        });
+      } else {
+        // Activate Pause Icon
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+        pauseIcon.classList.add('active');
+        playIcon.classList.remove('active');
+
+        // Remove 'paused' class to reduce opacity
+        pauseButton.classList.remove('paused');
+
+        // Update ARIA attributes
+        pauseButton.setAttribute('aria-label', 'Pause');
+        pauseButton.setAttribute('title', 'Pause');
+        pauseButton.setAttribute('aria-pressed', 'false');
+
+        console.log('Resumed');
+
+        // Resolve the pause promise to resume execution
+        if (pauseResolve) {
+          pauseResolve();
+          pausePromise = null;
+          pauseResolve = null;
+        }
+      }
+    }
+
+    /**
+     * Waits if the application is paused.
+     * @returns {Promise<void>}
+     */
+    async function waitIfPaused() {
+      if (!isPaused) return;
+      if (!pausePromise) {
+        pausePromise = new Promise(resolve => {
+          pauseResolve = resolve;
+        });
+      }
+      await pausePromise;
+    }
+
+    /**
+     * Fetches dialog data from the JSON file and initializes the dialog display.
+     */
     async function fetchAndDisplayData(){
+      await waitIfPaused();
       try {
         const response = await fetch('Data/Chat_JSON/dialog_data.json');
         if(!response.ok){
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const rawData = await response.json();
-
-        // 收集 group
-        const allGroups=new Set();
+        const allGroups = new Set();
         if(rawData.dialogs && Array.isArray(rawData.dialogs)){
-          rawData.dialogs.forEach(d=>{
+          rawData.dialogs.forEach(d => {
             if(d.group) allGroups.add(d.group);
           });
         }
         globalData = {
-          dialogs: rawData.dialogs||[],
+          dialogs: rawData.dialogs || [],
           groups: Array.from(allGroups)
         };
 
-        outputDiv= document.getElementById('output');
-        if(!globalData.groups || globalData.groups.length===0){
-          outputDiv.innerText='No groups available.';
+        outputDiv = document.getElementById('output');
+        if(!globalData.groups || globalData.groups.length === 0){
+          outputDiv.innerText = 'No groups available.';
           return;
         }
         startNewGroup();
       } catch(e){
         console.error('Error loading data:', e);
-        outputDiv.innerText='Error loading data.';
+        outputDiv.innerText = 'Error loading data.';
       }
     }
 
-    // 随机选组,尽量不重复
+    /**
+     * Selects a random group from the available groups, avoiding the last selected group.
+     * @param {Object} data - The global data containing groups.
+     * @returns {string|null} - The selected group name or null if no groups are available.
+     */
     function pickRandomGroup(data){
-      const groups=data.groups;
-      if(!groups || groups.length===0) return null;
-      if(groups.length===1) return groups[0];
+      const groups = data.groups;
+      if(!groups || groups.length === 0) return null;
+      if(groups.length === 1) return groups[0];
 
-      let randomGroup=null, attempts=10;
-      while(attempts>0){
-        const candidate= groups[Math.floor(Math.random()*groups.length)];
-        if(candidate!==lastGroupName){
-          randomGroup=candidate; 
+      let randomGroup = null, attempts = 10;
+      while(attempts > 0){
+        const candidate = groups[Math.floor(Math.random() * groups.length)];
+        if(candidate !== lastGroupName){
+          randomGroup = candidate; 
           break;
         }
         attempts--;
       }
       if(!randomGroup){
-        randomGroup= groups[Math.floor(Math.random()*groups.length)];
+        randomGroup = groups[Math.floor(Math.random() * groups.length)];
       }
-      lastGroupName= randomGroup;
+      lastGroupName = randomGroup;
       return randomGroup;
     }
 
-    // 开始打印 group
+    /**
+     * Starts displaying dialogs from a new group.
+     */
     function startNewGroup(){
       outputDiv.classList.remove('moveDown');
-      outputDiv.innerHTML='';
-      const groupName= pickRandomGroup(globalData);
+      outputDiv.innerHTML = '';
+      const groupName = pickRandomGroup(globalData);
       if(!groupName){
-        outputDiv.innerText='No valid group found.';
+        outputDiv.innerText = 'No valid group found.';
         return;
       }
       showGroup(groupName);
     }
 
-    // 依次打印 group
-    function showGroup(groupName){
-      const matched= globalData.dialogs.filter(d=> d.group===groupName);
+    /**
+     * Displays dialogs from the specified group with typing effect.
+     * @param {string} groupName - The name of the group to display dialogs from.
+     */
+    async function showGroup(groupName){
+      await waitIfPaused();
+      const matched = globalData.dialogs.filter(d => d.group === groupName);
       if(!matched.length){
-        outputDiv.innerText=`No dialogs found for group: ${groupName}`;
+        outputDiv.innerText = `No dialogs found for group: ${groupName}`;
         return;
       }
-      const lines= matched.map(d=> `#${d.group_sequence_no} (${d.tag}) ${d.content}`);
-      let idx=0;
+      const lines = matched.map(d => `#${d.group_sequence_no} (${d.tag}) ${d.content}`);
+      let idx = 0;
 
-      function showNextLine(){
-        if(idx>=lines.length){
-          // 打印完 => 容器下移
+      /**
+       * Recursively displays each line with a delay.
+       */
+      async function showNextLine(){
+        await waitIfPaused();
+        if(idx >= lines.length){
           outputDiv.classList.add('moveDown');
-          setTimeout(()=> startNewGroup(),2000);
+          setTimeout(() => startNewGroup(), 2000);
           return;
         }
-        const lineText= lines[idx++];
-        typeLine(lineText, outputDiv, ()=>{
-          setTimeout(()=>{
-            setTimeout(showNextLine, LINE_DISPLAY_TIME);
-          },0);
-        });
+        const lineText = lines[idx++];
+        await typeLine(lineText, outputDiv);
+        setTimeout(() => {
+          showNextLine();
+        }, LINE_DISPLAY_TIME);
       }
       showNextLine();
     }
 
-    // 逐字打印
-    function typeLine(lineText, containerEl, onComplete){
-      let charIndex=0;
-      const lineDiv=document.createElement('div');
-      lineDiv.className='dialog-line';
+    /**
+     * Types out a single line of dialog character by character.
+     * @param {string} lineText - The text of the dialog line to type out.
+     * @param {HTMLElement} containerEl - The container element where the line will be appended.
+     * @returns {Promise<void>}
+     */
+    async function typeLine(lineText, containerEl){
+      await waitIfPaused();
+      let charIndex = 0;
+      const lineDiv = document.createElement('div');
+      lineDiv.className = 'dialog-line';
       containerEl.appendChild(lineDiv);
 
-      function typeChar(){
-        if(charIndex<= lineText.length){
-          const typed= lineText.slice(0,charIndex);
-          lineDiv.innerHTML= applyBoldFormatting(typed) + '<span class="cursor"></span>';
-          charIndex++;
-          if(!manualScrolling){
-            containerEl.scrollTop= containerEl.scrollHeight;
-          }
-          setTimeout(typeChar,TYPING_INTERVAL);
-        } else {
-          setTimeout(()=>{
-            lineDiv.innerHTML= applyBoldFormatting(lineText);
-            if(!manualScrolling){
-              containerEl.scrollTop= containerEl.scrollHeight;
-            }
-            onComplete&&onComplete();
-          },EXTRA_CURSOR_TIME);
+      while(charIndex <= lineText.length){
+        await waitIfPaused();
+        const typed = lineText.slice(0, charIndex);
+        lineDiv.innerHTML = applyBoldFormatting(typed) + '<span class="cursor"></span>';
+        charIndex++;
+        if(!manualScrolling){
+          containerEl.scrollTop = containerEl.scrollHeight;
         }
+        await delay(TYPING_INTERVAL);
       }
-      typeChar();
+
+      // Wait for additional cursor display time
+      await delay(EXTRA_CURSOR_TIME);
+
+      lineDiv.innerHTML = applyBoldFormatting(lineText);
+      if(!manualScrolling){
+        containerEl.scrollTop = containerEl.scrollHeight;
+      }
+
+      // Set the typed flag to indicate typing completion
+      lineDiv.dataset.typed = "true";
+      console.log('Typing completed for line:', lineDiv.textContent);
     }
 
-    // 加粗转换：**xx** => <strong>xx</strong>
+    /**
+     * Applies bold formatting to text enclosed within double asterisks (**).
+     * @param {string} text - The text to format.
+     * @returns {string} - The formatted HTML string.
+     */
     function applyBoldFormatting(text){
       return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     }
 
-    // 当容器滚动时:用 Range 检测实际折行 => 找到离顶部最近的行 => brightness(1->0)
-    function onScrollBrightness(){
-      const container = outputDiv;
-      const paragraphs = container.querySelectorAll('.dialog-line');
+    /**
+     * Replaces image file links within dialog lines with actual image elements.
+     */
+    function replaceImageLinks() {
+      const regex = /\bfile-[a-zA-Z0-9_-]+\.(png|jpeg|jpg)\b/g; // Precise match for image filenames
 
-      if(!paragraphs.length) return;
-
-      let candidateRect = null;
-      let minDist = Infinity;
-
-      // 遍历 .dialog-line 内所有文本节点 => 逐字符 => getClientRects()
-      paragraphs.forEach(par => {
-        let textNodes = getTextNodes(par);
-        textNodes.forEach(node => {
-          let range = document.createRange();
-          for(let i=0; i< node.textContent.length; i++){
-            range.setStart(node, i);
-            range.setEnd(node, i+1);
-            const rects = range.getClientRects();
-            for(let r of rects){
-              // 计算相对 container顶部的距离
-              const cRect = container.getBoundingClientRect();
-              let lineTop = r.top - cRect.top + container.scrollTop;
-              let dist = Math.abs(lineTop - container.scrollTop);
-              if(dist<minDist){
-                minDist=dist;
-                candidateRect=r;
+      /**
+       * MutationObserver callback to process newly added dialog lines.
+       * @param {MutationRecord[]} mutations - The list of mutations.
+       */
+      const observerCallback = async (mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            for (const node of mutation.addedNodes) {
+              if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('dialog-line')) {
+                console.log('MutationObserver detected a new dialog-line.');
+                await waitIfPaused();
+                processLine(node); // Process the newly added line
               }
             }
           }
-        });
-      });
-
-      if(!candidateRect) return;
-
-      // ratio = 1->0
-      let ratio = 1 - (minDist/fadeDistance);
-      if(ratio<0) ratio=0;
-      if(ratio>1) ratio=1;
-
-      // 这里演示：在 candidateRect 的那部分上做一个 overlay
-      // 或者直接调节 candidateRect对应的文本“亮度”
-      // 由于实际折行只是 DOMRect，不是一个独立元素
-      // => 需 overlay 方式 or “改变这个 textNode 的 color/...
-      // 简化: 先放个 overlay
-
-      // 先移除旧 overlay
-      let oldOverlay = document.getElementById('lineOverlay');
-      if(oldOverlay) oldOverlay.remove();
-
-      let overlay = document.createElement('div');
-      overlay.id = 'lineOverlay';
-      overlay.style.position='absolute';
-      overlay.style.pointerEvents='none';
-      overlay.style.zIndex='9999';
-      overlay.style.background = `rgba(255,255,0,${ratio*0.3})`;
-      // 定位到 container内
-      let cRect = container.getBoundingClientRect();
-      let topInCont = candidateRect.top - cRect.top + container.scrollTop;
-      let leftInCont= candidateRect.left- cRect.left+ container.scrollLeft;
-      overlay.style.top = topInCont+'px';
-      overlay.style.left= leftInCont+'px';
-      overlay.style.width= candidateRect.width+'px';
-      overlay.style.height=candidateRect.height+'px';
-      container.appendChild(overlay);
-    }
-
-    // 小函数：获取一个元素内所有 textNode
-    function getTextNodes(el){
-      let res=[];
-      (function recurse(node){
-        if(node.nodeType===3){
-          res.push(node);
-        } else {
-          node.childNodes.forEach(recurse);
         }
-      })(el);
-      return res;
+      };
+
+      // Initialize MutationObserver
+      const observer = new MutationObserver(observerCallback);
+
+      // Start observing the output container for child node additions
+      observer.observe(outputDiv, { childList: true, subtree: true });
+      console.log('MutationObserver has been set up.');
+
+      // Process existing dialog lines on initial load
+      const lines = outputDiv.querySelectorAll('.dialog-line');
+      lines.forEach(async (line) => {
+        await waitIfPaused();
+        processLine(line);
+      });
+      console.log('Initial lines have been processed.');
+
+      /**
+       * Processes a single dialog line to replace image links with image elements.
+       * @param {HTMLElement} line - The dialog line element to process.
+       */
+      async function processLine(line) {
+        // Only process lines that have completed typing and haven't been processed yet
+        if (line.dataset.typed !== "true" || line.dataset.processed === "true") return;
+
+        console.log('Processing a new line:', line.textContent);
+
+        let rawText = line.innerHTML; // Use innerHTML to retain existing HTML formatting
+        const matches = rawText.match(regex);
+
+        if (matches) {
+          console.log(`Processing line with matches: ${matches}`);
+
+          matches.forEach((match) => {
+            const imagePath = `Data/Pictures/${match}`;
+            const altText = generateAltText(match);
+            const imgTag = `<img src="${imagePath}" alt="${altText}" style="max-width: 100%; max-height: 300px; margin: 10px auto; display: block;">`;
+
+            // Create a precise regex to replace exact matches
+            const regexExact = new RegExp(`\\b${escapeRegExp(match)}\\b`, "g");
+            rawText = rawText.replace(regexExact, imgTag);
+          });
+
+          // Update the line's HTML with the replaced image elements
+          line.innerHTML = rawText;
+          line.dataset.processed = "true"; // Mark as processed to prevent reprocessing
+          console.log("Line updated:", line.innerHTML);
+        } else {
+          // If no matches are found, mark as processed to avoid future attempts
+          line.dataset.processed = "true";
+          console.log('No matches found. Marked as processed.');
+        }
+      }
     }
 
+    /**
+     * Generates a meaningful alt text based on the image filename.
+     * @param {string} filename - The image filename.
+     * @returns {string} - The generated alt text.
+     */
+    function generateAltText(filename) {
+      // Remove file extension and replace hyphens/underscores with spaces
+      const nameWithoutExtension = filename.replace(/\.(png|jpeg|jpg)$/i, '');
+      const readableName = nameWithoutExtension.replace(/[-_]/g, ' ');
+      return `Image: ${readableName}`;
+    }
+
+    /**
+     * Escapes special characters in a string to be used in a regular expression.
+     * @param {string} string - The string to escape.
+     * @returns {string} - The escaped string.
+     */
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special characters
+    }
+
+    /**
+     * Delays execution for a specified amount of time.
+     * @param {number} ms - The delay duration in milliseconds.
+     * @returns {Promise<void>}
+     */
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Creates a debounced version of the provided function.
+     * @param {Function} func - The function to debounce.
+     * @param {number} wait - The debounce delay in milliseconds.
+     * @returns {Function} - The debounced function.
+     */
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
   </script>
-</body>
+</body> 
 </html>
